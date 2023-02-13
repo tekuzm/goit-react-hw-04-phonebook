@@ -79,7 +79,7 @@ const App = () => {
 
       <h2>Contacts</h2>
       <Filter handleChange={handleFilter} />
-      {contacts.length ? (
+      {filteredContacts.length ? (
         <ContactList
           deleteContact={deleteContact}
           contacts={filteredContacts}

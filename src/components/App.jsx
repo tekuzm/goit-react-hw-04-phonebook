@@ -71,7 +71,6 @@ const App = () => {
   };
 
   const filteredContacts = getFilteredContacts();
-  const isContacts = Boolean(contacts.length);
 
   return (
     <AppStyles>
@@ -80,7 +79,7 @@ const App = () => {
 
       <h2>Contacts</h2>
       <Filter handleChange={handleFilter} />
-      {isContacts ? (
+      {contacts.length ? (
         <ContactList
           deleteContact={deleteContact}
           contacts={filteredContacts}

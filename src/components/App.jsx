@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 
 // ========== components ==========
@@ -7,57 +7,59 @@ import ContactForm from './ContactForm/ContactForm';
 import ContactList from './ContactList/ContactList';
 import Filter from './Filter/Filter';
 
-class App extends Component {
-  state = {
-    contacts: [],
-    filter: '',
+// ========== styles ==========
+
+import { AppStyles } from './App.styled';
+
+const App = () => {
+  const [contacts, setContacts] = useState(() => {
+    const contacts = JSON.parse(localStorage.getItem('contacts'));
+    return contacts ? contacts : [];
+  });
+  const [filter, setFilter] = useState('');
+
+  useEffect(() => {
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
+
+  const isDuplicate = (name, number) => {
+    const normalizedName = name.toLowerCase();
+
+    const contact = contacts.find(({ name }) => {
+      return name.toLowerCase() === normalizedName;
+    });
+
+    return Boolean(contact);
   };
 
-  // born
-  componentDidMount() {
-    const contacts = JSON.parse(localStorage.getItem('contacts'));
-    if (contacts?.length) {
-      // same as (contacts && contacts.length)
-      this.setState({ contacts });
-    }
-  }
-
-  // growth
-  componentDidUpdate(prevProps, prevState) {
-    const { contacts } = this.state;
-
-    if (prevState.contacts !== contacts) {
-      localStorage.setItem('contacts', JSON.stringify(contacts));
-    }
-  }
-
-  addContact = ({ name, number }) => {
-    if (this.isDuplicate(name)) {
+  const addContact = ({ name, number }) => {
+    if (isDuplicate(name)) {
       alert(`${name} is already in contacts.`);
       return false;
     }
 
-    this.setState(prevState => {
-      const { contacts } = prevState;
-
+    setContacts(prevContacts => {
       const newContact = {
         id: nanoid(4),
         name,
         number,
       };
 
-      return { contacts: [newContact, ...contacts] };
+      return [newContact, ...prevContacts];
     });
 
     return true;
   };
 
-  handleFilter = ({ target }) => {
-    this.setState({ filter: target.value });
+  const deleteContact = id => {
+    setContacts(prevContacts =>
+      prevContacts.filter(contact => contact.id !== id)
+    );
   };
 
-  getFilteredContacts() {
-    const { filter, contacts } = this.state;
+  const handleFilter = ({ target }) => setFilter(target.value);
+
+  const getFilteredContacts = () => {
     if (!filter) {
       return contacts;
     }
@@ -66,54 +68,28 @@ class App extends Component {
     return contacts.filter(({ name }) => {
       return name.toLowerCase().includes(normalizedFilter);
     });
-  }
-
-  deleteContact = id => {
-    this.setState(({ contacts }) => {
-      const newContacts = contacts.filter(contact => contact.id !== id);
-      return { contacts: newContacts };
-    });
   };
 
-  isDuplicate(name, number) {
-    const normalizedName = name.toLowerCase();
+  const filteredContacts = getFilteredContacts();
+  const isContacts = Boolean(contacts.length);
 
-    const { contacts } = this.state;
-    const contact = contacts.find(({ name }) => {
-      return name.toLowerCase() === normalizedName;
-    });
+  return (
+    <AppStyles>
+      <h1>Phonebook</h1>
+      <ContactForm onSubmit={addContact} />
 
-    return Boolean(contact);
-  }
-
-  render() {
-    const contacts = this.getFilteredContacts();
-    const isContacts = Boolean(contacts.length);
-
-    return (
-      <div
-        style={{
-          height: '100vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          fontSize: '20px',
-        }}
-      >
-        <h1>Phonebook</h1>
-        <ContactForm onSubmit={this.addContact} />
-
-        <h2>Contacts</h2>
-        <Filter handleChange={this.handleFilter} />
-        {isContacts ? (
-          <ContactList deleteContact={this.deleteContact} contacts={contacts} />
-        ) : (
-          <p>No contacts in the list. Please add one!</p>
-        )}
-      </div>
-    );
-  }
-}
+      <h2>Contacts</h2>
+      <Filter handleChange={handleFilter} />
+      {isContacts ? (
+        <ContactList
+          deleteContact={deleteContact}
+          contacts={filteredContacts}
+        />
+      ) : (
+        <p>No contacts in the list. Please add one!</p>
+      )}
+    </AppStyles>
+  );
+};
 
 export default App;
